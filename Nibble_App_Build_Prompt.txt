@@ -1,0 +1,359 @@
+Historical product brief. Current behavior and development rules are documented in README.md and AGENTS.md; later approved changes take precedence over this original prompt.
+
+NIBBLE — COMPLETE DESKTOP RECIPE APP BUILD PROMPT
+
+Build a polished, functional desktop recipe app called Nibble.
+
+PRODUCT GOAL
+Turn food inspiration into recipes users can actually cook. Users can paste a TikTok, Instagram Reel, Instagram post, or recipe website link; upload videos or screenshots; or paste recipe text. Nibble extracts the available information into an editable recipe card, estimates calories and macronutrients when needed, and saves recipes in a personal library with collections and customizable tags.
+
+Start with a Windows desktop application. Keep the architecture portable to macOS and extensible to future mobile clients. Build real persistence and processing, not just a visual prototype. If an existing repository is provided, inspect its instructions and architecture first and preserve useful functionality.
+
+1. BRAND AND DESIGN
+
+Use Nibble consistently in the interface, app metadata, installer, documentation, and exports.
+
+Use a simple, text-free cooking-pot icon: a rounded terracotta pot with small handles and a single dark-green steam curl. Use the supplied icon as a reference if available; otherwise create a clean vector interpretation. No lettering inside the icon. Provide an SVG and appropriately sized app icons.
+
+Visual palette:
+- Warm cream background: #FFF8EE
+- Terracotta primary accent: #D65A32
+- Dark forest-green text: #173F2A
+- Muted sage accent: #A7B89A
+
+Use rounded cards, restrained shadows, readable typography, generous spacing, and appetizing food photography when available. Provide neutral placeholders when an image is missing. Maintain accessible contrast, labeled controls, keyboard navigation, and visible focus.
+
+Core message: "Save the inspiration. Cook the recipe."
+Empty state: "Your next favorite meal starts here."
+Import placeholder: "Paste a TikTok, Instagram, or recipe link..."
+
+2. DESKTOP EXPERIENCE
+
+Create a resizable desktop interface with:
+- Sidebar: Home, All Recipes, Favorites, Collections, Tags, Import History, Settings.
+- Persistent Import Recipe action.
+- Search above the recipe library.
+- Recipe grid and compact list views.
+- Profile selector near the bottom of the sidebar.
+
+Home shows recent recipes, favorite collections, and a prominent import area.
+Recipe previews show a cover image, title, known preparation time, source platform, favorite control, a few tags, and available calories per serving. Mark estimated nutrition clearly.
+
+Provide useful loading, empty, offline, processing, incomplete, and error states. Avoid dead buttons and fake progress percentages.
+
+3. PROFILES AND OWNERSHIP
+
+For the local-first MVP, support local profiles with a name, optional avatar, measurement preferences, and personal recipes, collections, tags, and favorites.
+
+Local profiles organize data on the device; they are not secure online accounts or operating-system-level isolation. Do not create a misleading sign-in screen.
+
+Make ownership explicit in the data model so authenticated accounts and optional cloud synchronization can be added later. Do not require an online account for the MVP. Persist all saved data across restarts.
+
+4. IMPORT METHODS
+
+Make these options equally prominent:
+- Paste a link.
+- Upload screenshots or video.
+- Paste recipe text.
+Also provide manual recipe creation.
+
+Supported inputs:
+- TikTok video links.
+- Instagram Reels.
+- Instagram posts and accessible carousels.
+- Recipe website URLs.
+- MP4, MOV, and WebM video files.
+- JPG, PNG, and WebP screenshots or images.
+- Captions, transcripts, or recipe text.
+
+Support drag-and-drop, file selection, and Ctrl+V for clipboard images.
+
+Allow mixed sources in one import: video plus caption, screenshots plus a URL, or several images of ingredients and instructions. Store source URLs and creator credits when supplied or reliably available.
+
+Treat direct social-link retrieval as best effort. When blocked, unavailable, or unsupported, preserve the URL and offer uploads or pasted text. Do not bypass platform authentication, paywalls, or access controls.
+
+Fallback message:
+"Can't import this link? Add screenshots of the ingredients and instructions, or upload the video."
+
+5. SCREENSHOTS AS A CORE WORKFLOW
+
+Users can supply screenshots from Instagram Reels, Instagram captions, carousel posts, TikTok, websites, or comments. These imports process the supplied image files without needing Instagram login, an Instagram API connection, or access to the original post.
+
+Before processing, show previews and allow users to:
+- Add multiple images.
+- Reorder, rotate, crop, and remove images.
+- Group images into one recipe.
+- Add screenshots to an existing draft.
+
+Use local OCR to extract visible text. Combine overlapping screenshots, deduplicate repeated ingredients and instructions, preserve meaningful order, and ignore unrelated interface labels such as likes and navigation controls.
+
+Do not automatically treat unrelated comments as authoritative recipe instructions. Preserve evidence and flag conflicting quantities or methods.
+
+If images contain multiple recipes, offer to split them. If they only show a finished dish, do not invent exact quantities, instructions, or nutrition. Ask for the missing information and allow an incomplete draft to be saved.
+
+Screenshots solve the need to retrieve source content; they cannot recover instructions or speech that are not present in the images.
+
+6. EXTRACTION PIPELINE
+
+Implement asynchronous processing:
+1. Validate and identify input.
+2. Retrieve permitted source content or process local uploads.
+3. Extract structured data, text, speech, and relevant metadata.
+4. Combine evidence into a schema-validated recipe draft.
+5. Identify missing or conflicting fields.
+6. Retrieve or estimate nutrition when sufficient information exists.
+7. Present an editable review.
+8. Save the confirmed recipe.
+
+For websites, prioritize structured Recipe data such as JSON-LD, then visible recipe content. If a page has several recipes, let the user select one.
+
+For videos, combine available captions, local speech transcription, and OCR from selected frames. Deduplicate repeated overlays. A silent video without readable instructions may yield an incomplete draft.
+
+Use a local language model to organize evidence, not invent missing facts. Validate model output before accepting it. Treat source content as untrusted data, not executable instructions.
+
+Unknown quantities, serving counts, temperatures, and cooking times must remain unknown. Any suggested completion must be labeled as an assumption and require confirmation.
+
+Preserve original text and useful evidence references such as screenshot identifiers or transcript timestamps. Handle multiple dishes by offering separate recipe cards.
+
+Show meaningful stages such as "Reading screenshots," "Transcribing audio," "Organizing recipe," and "Estimating nutrition." Support cancellation, retries, and recovery of drafts after interruptions.
+
+7. REVIEW AND RECIPE CARDS
+
+Show source evidence beside the draft. Highlight ambiguous ingredients, conflicting amounts, missing servings, and incomplete instructions.
+
+Allow users to edit, add, delete, and reorder ingredients and steps; choose a cover; correct servings; review nutrition matches; assign tags and collections; and save incomplete recipes.
+
+Distinguish source-provided facts, user edits, and app estimates. Retrying an import must not silently overwrite user corrections.
+
+Each recipe supports:
+- Title and short description.
+- Cover image.
+- Source URL, platform, and creator when known.
+- Imported and updated timestamps.
+- Servings or yield.
+- Preparation, cooking, and total time when known.
+- Ingredient groups, such as sauce, marinade, and main dish.
+- Original ingredient wording plus normalized name, quantity, unit, preparation notes, and optional status.
+- Numbered instructions.
+- Explicitly supplied temperatures and timers.
+- Source-provided and/or estimated nutrition.
+- Notes, favorites, tags, and collections.
+- Status such as Ready to Cook or Needs Review.
+
+Provide editing, duplication, deletion with recovery, printing, and portable JSON export.
+
+Add a cooking view with large steps, ingredient checkboxes, and easy navigation.
+
+8. MEASUREMENTS AND SERVING CONTROLS
+
+Support metric and US customary display. Convert volume to weight only when an ingredient-specific density or portion conversion is available. Never assume all tablespoons have the same gram weight. Preserve source measurements.
+
+Distinguish:
+- Changing the serving count: divides the same recipe into a different number of portions.
+- Scaling the recipe: proportionally changes ingredient amounts and total nutrition.
+
+Do not automatically scale oven temperatures or cooking times. Support fractions, ranges, and values such as "to taste" without converting them into fabricated exact amounts.
+
+9. NUTRITION
+
+Show calories, protein, carbohydrates, and fat. Optional additional nutrients may be displayed when available.
+
+Preserve source nutrition as Source-provided and record its basis: per serving, per 100 grams, or whole recipe. Ask for clarification when the basis is unknown.
+
+For missing or incomplete nutrition, use ingredient quantities and USDA FoodData Central records. Keep source-provided and calculated values separate. Do not silently mix incompatible bases.
+
+Calculate deterministically:
+Ingredient nutrient contribution = ingredient weight in grams * nutrient value per 100 grams / 100.
+Recipe totals = sum of ingredient contributions.
+Per-serving values = recipe totals / confirmed serving count.
+
+Requirements:
+- Match foods appropriately, distinguishing raw/cooked, drained/undrained, edible portions, and branded foods when relevant.
+- Store food database IDs, nutrient units, lookup basis, portion conversions, assumptions, and retrieval timestamps.
+- Let users correct food matches and weights.
+- Recalculate after relevant edits.
+- Do not use an LLM as the nutrition database or arithmetic engine.
+- Do not treat missing nutrient data, unmatched ingredients, or unknown quantities as zero.
+- Mark incomplete totals Partial estimate and explain what is excluded.
+- Label calculated totals Estimated nutrition.
+- Use sensible rounding rather than false precision.
+- Do not estimate exact ingredient weights from a photo alone.
+- Treat oil absorption, discarded marinade, and vague amounts as explicit uncertainties.
+- If servings are unknown, show supported whole-recipe totals and request servings before displaying per-serving nutrition.
+- If nutrition cannot be estimated, preserve the recipe and show what information is needed.
+
+Use cached food matches where appropriate, handle rate limits and outages, and allow manual nutrition entry.
+
+10. COLLECTIONS AND LIBRARY
+
+Users can:
+- Create, rename, and delete collections.
+- Set collection covers.
+- Add one recipe to multiple collections without duplicating it.
+- Favorite recipes.
+- Search titles, ingredients, tags, and notes.
+- Filter by collection, source, preparation time, tags, and available nutrition.
+- Sort by recently added, title, preparation time, or calories.
+- Bulk add recipes to collections or assign tags.
+
+Suggested collections: Recipes to Try, Weeknight Dinners, Meal Prep, and Family Favorites.
+Do not add fake saved recipes to a new profile.
+
+Deleting a collection must preserve its recipes. Provide a trash area for recipe recovery.
+
+Detect probable duplicates using source identifiers and content fingerprints, then offer to open the existing recipe or save a separate version.
+
+11. CATEGORIES AND CUSTOM TAGS
+
+Support multiple tags per recipe, organized into groups:
+
+Course:
+Appetizer, Main Course, Side Dish, Dessert, Snack, Drink.
+
+Food type:
+Vegetables, Chicken, Beef, Pork, Seafood, Pasta, Rice, Soup, Salad, Bread.
+
+Meal:
+Breakfast, Brunch, Lunch, Dinner.
+
+Cuisine:
+Italian, Mexican, Korean, Japanese, Chinese, Indian, Vietnamese, Other.
+
+Cooking method:
+Baked, Roasted, Grilled, Stovetop, Air Fryer, Slow Cooker, No-Cook.
+
+Preferences:
+Vegetarian, Vegan, Dairy-Free, Gluten-Free.
+
+Practical use:
+Meal Prep, Quick & Easy, One-Pot, Budget-Friendly.
+
+Users can create, rename, recolor, and delete custom tags and create additional tag groups. Prevent accidental duplicate tags caused by capitalization or whitespace. Deleting a tag must preserve recipes.
+
+Examples:
+Roasted broccoli: Side Dish + Vegetables + Dinner + Roasted.
+Iced matcha latte: Drink + Breakfast.
+Korean chicken bowl: Main Course + Chicken + Rice + Korean.
+
+Suggest tags from recipe evidence but make them editable. Do not infer allergen safety from incomplete ingredients. Dietary suggestions must be reviewable.
+
+Display tags as clickable chips. Show only a few on library cards with an overflow indicator. Support bulk tagging.
+
+Filter with OR matching within each group and AND matching across groups by default. Show active filters and a Clear Filters button. For example, Main Course + Chicken + Korean narrows across three groups.
+
+Collections are curated lists; tags describe recipes. Keep both concepts available and distinct. Preserve tag relationships in backups and exports.
+
+12. FREE-FIRST TECHNICAL ARCHITECTURE
+
+Suggested stack, subject to the existing repository:
+- Electron, React, and TypeScript for the desktop application.
+- SQLite for structured persistence.
+- Managed local files for cover images and optional original media.
+- Python worker processes for extraction.
+- FFmpeg for media processing.
+- Whisper for local transcription.
+- Tesseract for OCR.
+- Ollama with a suitably licensed local model for structured recipe extraction.
+- USDA FoodData Central for food and nutrient data.
+- Replaceable source adapters for websites and social platforms.
+
+Use open-source tools and free data services wherever practical. Verify current licenses, model terms, API requirements, and redistribution obligations before packaging.
+
+Do not require paid AI APIs, scraping subscriptions, or paid cloud hosting for core features. Free software still requires local compute, storage, and potentially sizeable model downloads.
+
+Provide a setup wizard that checks dependencies, explains download sizes and hardware requirements, and offers a smaller CPU-compatible processing option. Manual entry and existing recipes must remain usable when AI tools are unavailable.
+
+Separate extraction, recipe storage, nutrition lookup, and source adapters behind clear interfaces so implementations can change.
+
+Do not bundle a reusable secret API key in the desktop application. Secure user-supplied keys locally and keep them out of source control, logs, and renderer code. Support appropriate local nutrition data or cached results where practical.
+
+Saved recipes work offline. New URL imports, initial model downloads, and uncached nutrition lookups may require connectivity.
+
+13. DATA, PRIVACY, AND RELIABILITY
+
+Model:
+- Profiles and settings.
+- Recipes and ingredient groups.
+- Ingredients and instruction steps.
+- Collections and recipe-collection relationships.
+- Tag groups, tags, and recipe-tag relationships.
+- Sources and extraction evidence.
+- Nutrition records, ingredient matches, and calculation versions.
+- Media assets.
+- Import jobs and processing status.
+
+Use stable IDs, migrations, timestamps, foreign keys, and transactional saves. Retain enough structured data to recalculate nutrition without rerunning extraction.
+
+Provide backup and restore for recipes, collections, tags, and associated images. Use portable JSON exports and a printable recipe layout.
+
+Allow users to remove original uploaded media while retaining the recipe card. Explain media-retention settings in plain language.
+
+Validate URLs and redirects, block unintended private-network fetching, enforce file and processing limits, sanitize rendered content, and run media tools without shell-interpolated arguments.
+
+Use secure Electron configuration, context isolation, narrow IPC permissions, and no Node access in the renderer. Keep background processing separate from UI responsiveness.
+
+Do not allow imported text or model output to execute code, invoke tools, or override application instructions.
+
+14. DELIVERY ORDER
+
+Stage 1:
+Desktop shell, Nibble branding, profiles, persistent manual recipe cards, favorites, collections, and tags.
+
+Stage 2:
+Website and pasted-text imports with side-by-side review.
+
+Stage 3:
+Screenshot selection, clipboard paste, multi-image OCR, deduplication, and adding evidence to existing drafts.
+
+Stage 4:
+Local video transcription and frame OCR, followed by best-effort social-link adapters and helpful fallbacks.
+
+Stage 5:
+Nutrition matching, transparent calculations, serving controls, and unit handling.
+
+Stage 6:
+Cooking mode, export, backup and restore, packaging, and polish.
+
+Keep the app usable after each stage. Prioritize a complete import -> review -> save -> organize -> cook workflow.
+
+15. ACCEPTANCE CRITERIA
+
+Demonstrate that:
+- Nibble is the product name throughout.
+- The app icon is simple and contains no words.
+- A website recipe imports into an editable card.
+- A screenshot pasted from the clipboard starts an import.
+- Several overlapping screenshots produce one deduplicated draft.
+- Screenshot imports do not need Instagram access.
+- Images can supplement an existing draft.
+- Uploaded video can contribute speech and readable on-screen instructions.
+- Inaccessible social links produce useful fallback options.
+- Missing information is flagged instead of invented.
+- User corrections survive retries.
+- Recipes, profiles, collections, favorites, and tags survive restart.
+- One recipe can belong to multiple collections and have multiple tags.
+- Deleting collections or tags preserves recipes.
+- Search and multi-group tag filtering return expected results.
+- Nutrition uses verified food matches and deterministic arithmetic.
+- Missing quantities or unmatched ingredients produce partial estimates.
+- Changing servings differs correctly from scaling ingredient amounts.
+- Saved recipes remain usable offline.
+- Backup and restore preserve relationships and images.
+- Failed or canceled imports do not corrupt saved recipes.
+
+Add focused tests for persistence, extraction validation, screenshot deduplication, tag filtering, nutrition arithmetic, serving behavior, and failed imports.
+
+16. FINAL DELIVERABLES
+
+Deliver:
+- Runnable source code.
+- Setup and development instructions.
+- Dependency, model, and license documentation.
+- Database migration approach.
+- Windows build and installer procedure.
+- App icon assets.
+- Focused test results.
+- Clearly documented integration limitations and unfinished items.
+
+Make sensible routine implementation decisions and proceed with the working MVP. Do not claim unsupported integrations work. The defining experience should remain simple: discover something delicious, import it, review it, and keep it in Nibble.
+

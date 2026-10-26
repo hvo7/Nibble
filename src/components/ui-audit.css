@@ -1,0 +1,13 @@
+.import-draft-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;border-top:1px solid var(--line);padding:16px 0 0;margin-top:16px}
+.import-draft-row .grow{min-width:160px}.import-draft-row small{display:block;margin-top:5px}
+.editor-fields{border:0;padding:0;margin:0;min-width:0}.editor-save-feedback{margin:16px 30px;padding:12px 16px;border:1px solid var(--line);border-radius:9px;background:#e9eddf;font-size:13px}
+.editor-save-feedback.error{background:#fff0da;color:#714522}.editor-save-feedback p{margin:0}
+.editor-page .editor-toolbar{height:auto;min-height:78px;padding-top:12px;padding-bottom:12px;flex-wrap:wrap}
+.editor-page .editor-toolbar .icon-button{min-width:40px;min-height:40px}.editor-fields:disabled{opacity:.75}
+.history-supplement{display:flex;align-items:center;justify-content:space-between;gap:16px}
+@media(max-width:760px){.editor-page .editor-columns{grid-template-columns:minmax(0,1fr)}.editor-page .evidence-panel{border-left:0;border-top:1px solid var(--line)}.editor-page .editor-toolbar{padding:12px 16px;gap:10px}.editor-save-feedback{margin:12px 16px}.modal .cook-columns{grid-template-columns:minmax(0,1fr)}}
+
+
+.settings-page > .editor-fields{display:grid;gap:22px}
+
+.import-card-main{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.import-card-main .grow{min-width:160px}.import-card-main h3{margin:0 0 6px;font-size:17px}.import-card-main small{display:block}.import-details{margin-top:16px;border-top:1px solid var(--line);padding-top:12px;font-size:12px}.import-details summary{cursor:pointer;color:var(--muted)}.import-details p{margin:12px 0 4px;overflow-wrap:anywhere}

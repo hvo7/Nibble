@@ -1,0 +1,31 @@
+node_modules/
+dist/
+dist-electron/
+release/
+coverage/
+.nibble-test/
+.env*
+*.sqlite*
+*.log
+__pycache__/
+.venv/
+!.env.example
+.nibble-staging/
+.nibble-runtime/
+
+# Local agent settings, credentials and machine-specific diagnostics
+.codex/
+.agents/
+.aws/
+*.pem
+*.key
+*.pfx
+*.p12
+desktop-check.txt
+package-check.txt
+Thumbs.db
+.DS_Store
+# Historical visual drafts are local design references, not application source
+previews/
+nibble-import-sections.html
+preview-nibble-website-import.html

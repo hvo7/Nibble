@@ -1,0 +1,12 @@
+# Nibble development workflow
+
+- Treat explicit user requests as authorization to implement source changes in isolated staging and run relevant checks. Preview review is for feedback and iteration, not an extra approval gate before staging implementation. Clarify only material ambiguity; follow the user's latest placement and workflow instructions.
+- Build/run through `npm run staging` or `npm run build:staging`. These use `.nibble-staging/app` and isolated `.nibble-staging/data`. Never substitute a mockup for requested changes to the actual app.
+- When a conversation preview is requested, open the working app preview in this conversation's right-side browser tab, verify it loads, and leave it available for native annotations. A URL, screenshot, or inline concept alone does not fulfill a side-panel preview request. Report a concrete blocker if the browser or annotation controls cannot be verified.
+- Current navigation: replace the left-sidebar Import History tab with Drafts. Drafts contains unfinished imports; saved and trashed recipes leave that list. Keep import source evidence and recovery data.
+- A successful Save recipe opens the full saved-recipe page. Opening a saved recipe card or Open saved recipe must reach that same page. Editing is a separate mode. Failed saves retain the review form and user edits; saving never implies source verification.
+- Verify the entire affected workflow, including navigation, save success/failure/retry, persistence, drafts, trash/restore, profile isolation, source evidence, unknown nutrition, and narrow layouts. Run relevant automated extraction, data-integrity, security, integration and UI checks. Distinguish automated fixtures, live browser checks, native desktop checks, and unavailable checks honestly.
+- Do not overwrite the existing production build (`dist`, `dist-electron`, `release`), package a production release, deploy, or migrate production user data without explicit production approval after staging review.
+- Keep published nutrition and estimates separate. Unknown values are never zero. Preserve source evidence and surface conflicting servings/nutrition for user review.
+- Use free tools/services only. Ask before introducing an external platform. USDA is approved; the user supplies their own free key in Settings. Never embed a key or activate paid services.
+- The website import review layout and optional free USDA FoodData Central integration were approved on October 21, 2026. The staging-first workflow and sidebar Drafts placement above were requested on October 25, 2026.
