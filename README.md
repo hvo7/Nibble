@@ -1,4 +1,4 @@
-# Nibble 1.0.0
+# Nibble 1.0.1
 
 **Save the inspiration. Cook the recipe.**
 
@@ -53,13 +53,13 @@ npm run package:win
 npm run test:package
 ```
 
-The unsigned Windows x64 installer and unpacked app are written under `release/1.0.0/`. `npm run test:package` checks the packaged application, bundled resources and real screenshot OCR. Native launch, clean-machine installation and live integrations are distinct checks; see the [1.0.0 release report](docs/RELEASE_1.0.0.md) for actual results.
+The unsigned Windows x64 installer and unpacked app are written under `release/1.0.1/`. `npm run test:package` checks the packaged application, bundled resources and real screenshot OCR. Native launch, clean-machine installation and live integrations are distinct checks; see the [1.0.1 release report](docs/RELEASE_1.0.1.md) for actual results.
 
-## Publish the prepared 1.0.0 source
+## Production updates
 
-The release report records whether GitHub publication actually completed. If it is still pending, run `Publish-Nibble-1.0.0.cmd` from a normal Windows session in this project folder with Git installed and your GitHub credentials available. It checks the prepared source hashes (allowing normal text line-ending conversions), connects `origin`, preserves the existing repository commit and Apache license, commits the release, and pushes `main` plus the annotated `v1.0.0` tag together. It never force-pushes. Changed source or remote history stops publication for review.
+Run the staging verification first. After production approval, build production and run `npm run verify:parity` to confirm both channels contain the same current application code. Packaged builds must also pass `npm run test:package`. Fully close Nibble before reopening an updated build; Settings shows the running version.
 
-To validate the prepared source without changing Git state, run `node scripts/publish-1.0.0.mjs --check`. Installers and personal data are excluded from the source push. This launcher does not create a GitHub Release entry or upload the installer.
+The original source publication is complete. `Publish-Nibble-1.0.0.cmd` is retained only as historical release tooling and intentionally refuses later versions. Generated builds, installers and personal data remain excluded from Git.
 
 ## Privacy and limits
 
@@ -84,7 +84,7 @@ Optional Ollama, FFmpeg and Python/Whisper tools are installed separately. USDA 
 
 ## Documentation
 
-- [Changelog](CHANGELOG.md) and [1.0.0 release notes](docs/RELEASE_1.0.0.md)
+- [Changelog](CHANGELOG.md) and [1.0.1 release notes](docs/RELEASE_1.0.1.md)
 - [Setup](docs/SETUP.md), [Windows packaging](docs/PACKAGING.md), [browser imports](docs/BROWSER_IMPORT.md)
 - [Automatic cover photos](docs/RECIPE_COVER_PHOTOS.md), [known limitations](docs/KNOWN_LIMITATIONS.md)
 - [Architecture](docs/ARCHITECTURE.md), [third-party licenses](docs/LICENSES.md)

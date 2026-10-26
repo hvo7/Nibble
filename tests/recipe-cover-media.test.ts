@@ -26,3 +26,12 @@ describe('Local dish photo storage',()=>{
     image(100,100);expect(media.addImage(Buffer.from('screenshot'),'screenshot',owner).id).toBeTruthy();
   });
 });
+
+it('cancellation during real photo decoding writes no asset or file', async () => {
+  const sharp = (await import('sharp')).default;
+  const bytes=await sharp({create:{width:400,height:428,channels:3,background:'red'}}).webp().toBuffer();
+  const controller=new AbortController();
+  const pending=media.addCoverPhoto(bytes,'Cover',owner,controller.signal);controller.abort(new Error('Canceled'));
+  await expect(pending).rejects.toThrow('Canceled');
+  expect(store.assetList()).toHaveLength(0);expect(readdirSync(media.directory)).toEqual([]);
+});

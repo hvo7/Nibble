@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.1 - October 25, 2026
+
+- Fixed the website-photo decoder mismatch: PNG, JPEG and WebP downloads now use one tested local decoder in staging and production.
+- Packaged the decoder and native dependencies, retained safe photo failure details and expanded bounded candidate fallback.
+- Added staging/production source and bundle parity checks and a visible version in Settings.
+- Preserved existing recipes and production data. See [verification and live-check limitations](docs/RELEASE_1.0.1.md).
+
 ## 1.0.0 - October 25, 2026
 
 Initial GitHub release, promoting the approved staging application to production.

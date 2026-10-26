@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Nibble Recipe Companion",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Save a recipe you opened for local import into Nibble. Runs only when you choose to read a page.",
   "permissions": [
     "activeTab",

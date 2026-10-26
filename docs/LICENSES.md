@@ -17,7 +17,7 @@ Nibble requires no paid plan or recurring hosted service. The app must not embed
 | SQLite | Persistent storage through Node | Public domain; Node distributions include their own notices |
 | Tesseract.js / Tesseract | Local OCR | Apache-2.0; preserve engine/language-data notices |
 | electron-builder | Installer tooling | MIT |
-| sharp | Development-only SVG icon rasterization | Apache-2.0; preserve libvips and native-package notices when distributing the tooling |
+| sharp | Website cover-photo normalization and SVG icon rasterization | Apache-2.0; preserve libvips and native-package notices when distributing the app and tooling |
 
 The exact installed versions are recorded in package-lock.json. `npm run licenses` writes an inventory of installed package declarations, including transitive dependencies. It is an inventory, not a substitute for preserving full license/NOTICE files.
 

@@ -1,6 +1,6 @@
 # Windows builds
 
-Browser companion files are copied to `resources/browser-companion` by the production packaging configuration and to `.nibble-staging/app/browser-companion` for staging. Keep this folder intact for Chrome/Edge's **Load unpacked** workflow. See `BROWSER_IMPORT.md` for companion setup and `RELEASE_1.0.0.md` for current release verification.
+Browser companion files are copied to `resources/browser-companion` by the production packaging configuration and to `.nibble-staging/app/browser-companion` for staging. Keep this folder intact for Chrome/Edge's **Load unpacked** workflow. See `BROWSER_IMPORT.md` for companion setup and `RELEASE_1.0.1.md` for current release verification.
 
 ## Build and run locally
 
@@ -24,7 +24,7 @@ Build the Windows x64 NSIS installer:
 npm run package:win
 ```
 
-The 1.0.0 output appears under `release/1.0.0/`; earlier release outputs are preserved. The installer supports a user-selected installation directory and does not delete app data on uninstall. It is unsigned by default. Packaging reuses the installed Electron distribution and puts temporary files and installer tooling in `.nibble-test/`. The first installer build may need internet access.
+The 1.0.1 output appears under `release/1.0.1/`; earlier release outputs are preserved. The installer supports a user-selected installation directory and does not delete app data on uninstall. It is unsigned by default. Packaging reuses the installed Electron distribution and puts temporary files and installer tooling in `.nibble-test/`. The first installer build may need internet access.
 
 ## Assets and optional processors
 
@@ -45,3 +45,5 @@ Electron includes Node and SQLite. OCR workers and WASM engines are unpacked bes
 9. Generate license inventory and preserve full third-party notices.
 
 Live integrations require their actual dependencies; mock/fixture tests do not establish that an external service or model works on every machine.
+
+Website photo decoding uses bundled sharp and @img native libraries. Package verification exercises PNG/JPEG/WebP with those shipped dependencies. Run `npm run verify:parity` after building staging and production.

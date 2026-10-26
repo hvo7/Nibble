@@ -44,3 +44,13 @@ await new Promise((resolve, reject) => {
   child.on('error', reject); child.on('exit', code => code === 0 ? resolve() : reject(new Error('Shipped OCR regression failed: ' + code)));
 });
 console.log('PACKAGE OCR PASS: shipped dependencies + bundled models, a fresh cache provisioned locally, and Electron environment detection in real Node workers read all 17 ingredients. This does not replace the native Windows launch check.');
+
+const shippedSharp = require('sharp');
+assert.ok(require.resolve('sharp').startsWith(content + path.sep), 'Cover decoder must come from shipped dependencies');
+for (const format of ['png','jpeg','webp']) {
+  const bytes = await shippedSharp({create:{width:400,height:428,channels:3,background:{r:120,g:80,b:40}}}).toFormat(format).toBuffer();
+  const normalized = await shippedSharp(bytes,{limitInputPixels:40000000,failOn:'error'}).rotate().resize({width:1600,height:1600,fit:'inside',withoutEnlargement:true}).png().toBuffer();
+  const info = await shippedSharp(normalized).metadata();
+  assert.equal(info.format,'png');assert.equal(info.width,400);assert.equal(info.height,428);
+}
+console.log('PACKAGE COVER PASS: shipped decoder and native image libraries read real PNG/JPEG/WebP bytes and normalize them to local PNG.');

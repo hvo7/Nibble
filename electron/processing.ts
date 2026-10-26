@@ -13,6 +13,7 @@ import { Store } from './database';
 import { MediaStore } from './media';
 import { fetchPublic, fetchPublicImage } from './network';
 import type { WebsiteImage } from './website-images';
+import { coverPhotoFailure } from './cover-photo';
 import { extractWebsite, organizeLocal } from './extraction';
 import { localOcrOptions } from './ocr-model';
 import { extractBrowserCapture } from './browser-capture';
@@ -182,19 +183,24 @@ export class ImportService {
         stage('Choosing the dish photo');
         const photoSignal = AbortSignal.any([signal, AbortSignal.timeout(12000)]);
         let selected = false;
-        for (const photo of photos.slice(0, 3)) {
+        const failures: string[] = [];
+        for (const photo of photos.slice(0, 6)) {
           if (photoSignal.aborted) break;
           try {
             const downloaded = await fetchPublicImage(photo.url, photoSignal);
             photoSignal.throwIfAborted();
-            const asset = this.media.addImage(downloaded.bytes, `${draft.title.slice(0,250)} - dish photo.png`, request.profileId, true);
+            const asset = await this.media.addCoverPhoto(downloaded.bytes, `${draft.title.slice(0,250)} - dish photo.png`, request.profileId, photoSignal);
             draft.coverId = asset.id;
             draft.evidence.push({ id: randomUUID(), kind: 'image', label: 'Dish photo from website', assetId: asset.id, text: '' });
             if (draft.websiteImport) draft.websiteImport.sources = [...draft.websiteImport.sources.slice(0,99), { field: 'Cover photo', method: photo.reason, raw: downloaded.url }];
             selected = true; this.store.saveJob(job); this.notify(); break;
-          } catch { signal.throwIfAborted(); /* A blocked/missing photo must not lose a usable recipe. */ }
+          } catch (error) {
+            signal.throwIfAborted();
+            const reason = coverPhotoFailure(error); failures.push(reason);
+            if (draft.websiteImport) draft.websiteImport.sources = [...draft.websiteImport.sources.slice(0,99), { field: 'Cover photo attempt', method: photo.reason, raw: JSON.stringify({ url: photo.url, result: reason }) }];
+          }
         }
-        if (!selected) draft.warnings.push('The website photo could not be saved. You can choose a cover photo in Edit recipe.');
+        if (!selected) draft.warnings.push('The website photo could not be saved. ' + [...new Set(failures.length ? failures : ['The image server timed out.'])].join(' ') + ' Retry the import or choose a cover photo in Edit recipe.');
       }
       signal.throwIfAborted(); job.status = 'review';
       job.stage = job.drafts.some(recipe => recipe.ingredients.length) ? `${job.drafts[0].ingredients.length} ingredients extracted · review recipe` : 'No ingredients extracted · source needs attention';

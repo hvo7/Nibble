@@ -81,7 +81,7 @@ async function imported(html: string) {
   return store.snapshot().jobs.find(j=>j.id===id)!.drafts[0];
 }
 function fakeMedia() {
-  return vi.spyOn(MediaStore.prototype,'addImage').mockImplementation((_bytes,name,owner)=>{
+  return vi.spyOn(MediaStore.prototype,'addCoverPhoto').mockImplementation(async (_bytes,name,owner)=>{
     const asset={id:uid(),name,mime:'image/png',size:100};store.addAsset(asset,owner);return asset;
   });
 }
@@ -90,7 +90,7 @@ describe('Website cover import lifecycle',()=>{
     const media=fakeMedia();vi.mocked(fetchPublicImage).mockResolvedValue({bytes:Buffer.from('photo'),url:'https://cdn.example.com/soup.jpg'});
     const draft=await imported(jsonLd([{...sourceRecipe,name:'Banana bread',image:'/bread.jpg',recipeIngredient:Array.from({length:20},(_,i)=>`${i+1} g flour`)},{...sourceRecipe,image:'/soup.jpg'}]));
     expect(fetchPublicImage).toHaveBeenCalledTimes(1);expect(vi.mocked(fetchPublicImage).mock.calls[0][0]).toBe('https://example.com/soup.jpg');
-    expect(media).toHaveBeenCalledWith(expect.any(Buffer),expect.stringContaining('dish photo'),profileId,true);
+    expect(media).toHaveBeenCalledWith(expect.any(Buffer),expect.stringContaining('dish photo'),profileId,expect.any(AbortSignal));
     expect(draft.coverId).not.toBeNull();expect(draft.evidence.some(e=>e.kind==='image'&&e.assetId===draft.coverId)).toBe(true);
     expect(draft.websiteImport?.sources.find(s=>s.field==='Cover photo')?.raw).toBe('https://cdn.example.com/soup.jpg');
     const saved=store.saveRecipe(draft);store.close();store=new Store(directory);await store.open();
@@ -107,7 +107,7 @@ describe('Website cover import lifecycle',()=>{
   it('falls back after corrupt or tiny image decoding and limits download attempts',async()=>{
     fakeMedia().mockImplementation(()=>{throw new Error('Unreadable image');});vi.mocked(fetchPublicImage).mockResolvedValue({bytes:Buffer.from('bad'),url:'https://example.com/photo.jpg'});
     const draft=await imported(jsonLd({...sourceRecipe,image:Array.from({length:10},(_,i)=>`/photo${i}.jpg`)}));
-    expect(fetchPublicImage).toHaveBeenCalledTimes(3);expect(draft.coverId).toBeNull();expect(draft.ingredients).toHaveLength(5);
+    expect(fetchPublicImage).toHaveBeenCalledTimes(6);expect(draft.coverId).toBeNull();expect(draft.ingredients).toHaveLength(5);
   });
   it('canceling a photo download retains parsed ingredients and creates no cover asset',async()=>{
     const media=fakeMedia();vi.mocked(fetchPublic).mockResolvedValue({body:jsonLd({...sourceRecipe,image:'/soup.jpg'}),url:'https://example.com/soup'});
@@ -126,4 +126,35 @@ describe('Website cover import lifecycle',()=>{
   it('does not download logos or invent a cover when no suitable photo exists',async()=>{
     const draft=await imported(jsonLd({...sourceRecipe,image:'/site-logo.jpg'}));expect(draft.coverId).toBeNull();expect(fetchPublicImage).not.toHaveBeenCalled();
   });
+});
+
+it('saves a real WebP website response, persists it, and never calls Electron nativeImage', async () => {
+  const sharp = (await import('sharp')).default;
+  const { readFileSync } = await import('node:fs');
+  const bytes = await sharp({create:{width:400,height:428,channels:3,background:{r:120,g:80,b:40}}}).webp().toBuffer();
+  vi.mocked(fetchPublicImage).mockResolvedValue({bytes,url:'https://example.com/dish.png'});
+  const draft=await imported(jsonLd({...sourceRecipe,image:'/dish.png'}));
+  expect(draft.coverId).not.toBeNull();
+  const stored=readFileSync(new MediaStore(store).file(draft.coverId!));
+  expect(await sharp(stored).metadata()).toMatchObject({format:'png',width:400,height:428});
+  const saved=store.saveRecipe(draft);store.close();store=new Store(directory);await store.open();
+  expect(store.snapshot().recipes.find(r=>r.id===saved.id)?.coverId).toBe(draft.coverId);
+  expect(draft.sourceReview?.confirmed).not.toBe(true);
+});
+
+it('tries the remaining ranked cover when the first three variants fail and retains failure evidence', async () => {
+  fakeMedia();
+  vi.mocked(fetchPublicImage).mockRejectedValueOnce(new Error('The site returned 404.')).mockRejectedValueOnce(new Error('The site returned 404.')).mockRejectedValueOnce(new Error('The site returned 404.')).mockResolvedValue({bytes:Buffer.from('photo'),url:'https://example.com/fourth.jpg'});
+  const draft=await imported(jsonLd({...sourceRecipe,image:['/one.jpg','/two.jpg','/three.jpg','/fourth.jpg']}));
+  expect(draft.coverId).not.toBeNull();expect(fetchPublicImage).toHaveBeenCalledTimes(4);
+  expect(draft.websiteImport?.sources.filter(s=>s.field==='Cover photo attempt')).toHaveLength(3);
+  expect(draft.websiteImport?.sources.find(s=>s.field==='Cover photo')?.raw).toContain('fourth.jpg');
+});
+
+it('a failed image download explains the cause while retaining the recipe and source', async () => {
+  vi.mocked(fetchPublicImage).mockRejectedValue(new Error('The site returned 403.'));
+  const draft=await imported(jsonLd({...sourceRecipe,image:'/dish.jpg'}));
+  expect(draft.coverId).toBeNull();expect(draft.ingredients).toHaveLength(5);
+  expect(draft.warnings.join(' ')).toContain('blocked or limited');
+  expect(draft.websiteImport?.sources.some(s=>s.field==='Cover photo attempt'&&s.raw.includes('dish.jpg'))).toBe(true);
 });

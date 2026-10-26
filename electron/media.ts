@@ -4,6 +4,7 @@ import path from 'node:path';
 import { nativeImage } from 'electron';
 import type { Asset } from '../src/shared/model';
 import { Store } from './database';
+import { normalizeCoverPhoto } from './cover-photo';
 
 export class MediaStore {
   readonly directory: string;
@@ -17,7 +18,16 @@ export class MediaStore {
     if (image.isEmpty() || size.width * size.height > 40000000) throw new Error('Use a readable JPG, PNG, or WebP image under 40 megapixels.');
     if (recipeCover && (size.width < 200 || size.height < 160 || size.width / size.height > 3.2 || size.height / size.width > 3.2)) throw new Error('The photo is too small or has a banner-like shape.');
     // Re-encoding removes active formats and metadata and gives OCR consistent PNG input.
-    const png = image.toPNG();
+    return this.savePng(image.toPNG(), name, profileId);
+  }
+  async addCoverPhoto(bytes: Buffer, name: string, profileId: string, signal?: AbortSignal): Promise<Asset> {
+    this.store.assertProfile(profileId);
+    signal?.throwIfAborted();
+    const png = await normalizeCoverPhoto(bytes);
+    signal?.throwIfAborted();
+    return this.savePng(png, name, profileId);
+  }
+  private savePng(png: Buffer, name: string, profileId: string): Asset {
     const asset: Asset = { id: randomUUID(), name: name.slice(0, 300), mime: 'image/png', size: png.length };
     writeFileSync(this.file(asset.id), png);
     try { this.store.addAsset(asset, profileId); } catch (error) { unlinkSync(this.file(asset.id)); throw error; }

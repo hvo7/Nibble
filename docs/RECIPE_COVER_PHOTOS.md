@@ -4,6 +4,10 @@ New direct website imports choose a dish photo and save a local, re-encoded copy
 
 ## Production status
 
+**Updated in 1.0.1:** downloaded PNG/JPEG/WebP photos now use a bundled decoder rather than relying on Electron nativeImage for WebP. Up to six candidates are tried within the same timeout, with safe failure reasons retained. See [1.0.1 validation and limitations](RELEASE_1.0.1.md).
+
+### Earlier 1.0.0 confirmation
+
 Confirmed October 25, 2026: this feature is included in production **1.0.0** and in [the published GitHub source](https://github.com/hvo7/Nibble/commit/ece9edcf16bcffe3919532760a09dd61f9b5ff61). Production source maps matched current source, including image selection, download/storage, import persistence, Home cards and the full recipe page. After the user's production request, `npm run build` refreshed production successfully. All 13 production files remained byte-for-byte identical to the backup; no application-code or version change was needed.
 
 The same source passed all 224 automated staging checks and the staging build in this conversation. After refreshing production, `npm run test:package` confirmed that the existing unpacked 1.0.0 app contains the exact production renderer/main/preload and required resources; the bundled OCR regression also passed. The production desktop smoke check again exited with `0x80000003` before rendering, so live native imports and narrow-window appearance remain unverified in this environment.
@@ -16,9 +20,9 @@ Images attached to the selected Recipe in JSON-LD, microdata/RDFa, or visible re
 
 This is heuristic selection based on page evidence, not visual food recognition. A site can label a photo incorrectly. Manual cover correction remains available; ambiguous pages may have no automatic cover.
 
-Only the chosen main recipe triggers photo downloads. At most three ranked candidates are tried, within one 12-second photo budget. Photo failures preserve the recipe and show a review note. Canceling retains recovered ingredients. The selected photo URL and selection reason remain in website source records, and the photo remains available as source evidence.
+Only the chosen main recipe triggers photo downloads. At most six ranked candidates are tried, within one 12-second photo budget. Photo failures preserve the recipe and show a review note. Canceling retains recovered ingredients. The selected photo URL and selection reason remain in website source records, and the photo remains available as source evidence.
 
-Saved browser capture files continue to import without network requests. This feature downloads photos for direct website URL imports only. Screenshots still support choosing a cover manually. No paid service, cloud image model or new dependency is used.
+Saved browser capture files continue to import without network requests. This feature downloads photos for direct website URL imports only. Screenshots still support choosing a cover manually. No paid service or cloud image model is used. The existing free sharp dependency is now included at runtime.
 
 ## Transport and storage
 
