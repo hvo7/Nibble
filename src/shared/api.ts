@@ -14,7 +14,7 @@ export interface NibbleApi {
   setUsdaKey(value: string): Promise<void>;
   capabilities(): Promise<Capabilities>;
   selectMedia(profileId: string): Promise<Asset[]>;
-  addImage(profileId: string, name: string, bytes: ArrayBuffer): Promise<Asset>;
+  addImage(profileId: string, name: string, bytes: ArrayBuffer, cover?: boolean): Promise<Asset>;
   asset(id: string): Promise<Asset>;
   startImport(request: ImportRequest): Promise<string>;
   cancelImport(id: string): Promise<void>;

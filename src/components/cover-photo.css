@@ -1,0 +1,8 @@
+.cover-photo-dialog { min-width: 0; }
+.cover-photo-preview { margin: 0 auto 16px; max-width: 340px; }
+.cover-photo-preview .cover { display: block; width: 100%; height: 210px; object-fit: cover; border-radius: 16px; }
+.cover-photo-preview .placeholder { display: flex; }
+.cover-photo-paste { border: 2px dashed var(--border, #d9d6cb); border-radius: 12px; padding: 18px; text-align: center; margin-bottom: 12px; }
+.cover-photo-paste:focus { outline: 3px solid var(--accent, #8d493a); outline-offset: 3px; }
+.cover-photo-paste p { margin: 6px 0 0; }
+@media (max-width: 480px) { .cover-photo-preview .cover { height: 170px; } .cover-photo-dialog .dialog-footer { flex-wrap: wrap; } }

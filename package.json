@@ -105,7 +105,8 @@
           "popup.css",
           "popup.js",
           "privacy.html",
-          "README.txt"
+          "README.txt",
+          "photo-capture.js"
         ]
       }
     ],

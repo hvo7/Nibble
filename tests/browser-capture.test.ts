@@ -36,7 +36,7 @@ describe('saved browser recipe imports', () => {
     expect(recipe.websiteImport?.conflicts).toHaveLength(0);
   });
   it('rejects unsupported, oversized, empty, malformed, and executable-link captures', () => {
-    for (const value of ['not json', '{}', JSON.stringify({ ...savedBrowserRecipe(), version: 2 }), JSON.stringify({ ...savedBrowserRecipe(), url: 'javascript:alert(1)' }), JSON.stringify({ ...savedBrowserRecipe(), url: 'https://user:password@example.com/' }), JSON.stringify({ ...savedBrowserRecipe(), cookies: 'not accepted' }), ' '.repeat(2 * 1024 * 1024 + 1)]) expect(() => readBrowserCapture(value)).toThrow();
+    for (const value of ['not json', '{}', JSON.stringify({ ...savedBrowserRecipe(), version: 3 }), JSON.stringify({ ...savedBrowserRecipe(), url: 'javascript:alert(1)' }), JSON.stringify({ ...savedBrowserRecipe(), url: 'https://user:password@example.com/' }), JSON.stringify({ ...savedBrowserRecipe(), cookies: 'not accepted' }), ' '.repeat(6 * 1024 * 1024 + 1)]) expect(() => readBrowserCapture(value)).toThrow();
     expect(browserCaptureSchema.safeParse({ ...savedBrowserRecipe(), html: '' }).success).toBe(false);
     expect(() => extractBrowserCapture(savedBrowserRecipe('<h1>Verify you are human</h1><p>Access denied</p>'), uid())).toThrow('No ingredient');
   });

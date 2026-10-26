@@ -17,6 +17,7 @@ import { coverPhotoFailure } from './cover-photo';
 import { extractWebsite, organizeLocal } from './extraction';
 import { localOcrOptions } from './ocr-model';
 import { extractBrowserCapture } from './browser-capture';
+import { browserCoverForRecipe } from '../src/shared/browser-capture';
 
 /** Spawn executable + argv directly; user content never becomes a shell command. */
 export function runTool(executable: string, args: string[], signal?: AbortSignal, timeout = 120000): Promise<string> {
@@ -178,6 +179,22 @@ export class ImportService {
       // consume network/storage or become this dish's cover.
       job.drafts = singleImportDraft(recipes, importTitleHint(job));
       const draft = job.drafts[0];
+      if (draft && request.browserCapture?.version === 2) {
+        const capture = request.browserCapture, photo = browserCoverForRecipe(capture, draft);
+        if (capture.photoNote) draft.warnings.push(capture.photoNote);
+        if (photo) {
+          stage('Preparing saved dish photo');
+          try {
+            const asset = await this.media.addCoverPhoto(Buffer.from(photo.data, 'base64'), draft.title.slice(0, 250) + ' - browser dish photo.jpg', request.profileId, signal);
+            draft.coverId = asset.id;
+            draft.evidence.push({ id: randomUUID(), kind: 'image', label: 'Dish photo saved by browser companion', text: '', assetId: asset.id });
+            if (draft.websiteImport) draft.websiteImport.sources = [...draft.websiteImport.sources.slice(0, 99), { field: 'Cover photo', method: photo.reason, raw: photo.sourceUrl }];
+          } catch (error) {
+            signal.throwIfAborted();
+            draft.warnings.push('The saved dish photo could not be read. ' + coverPhotoFailure(error) + ' Paste or choose another cover photo.');
+          }
+        } else if (capture.coverPhoto) draft.warnings.push('The saved photo belongs to a different recipe record. Choose a cover photo for this dish.');
+      }
       const photos = draft ? websiteImages[draft.id] ?? [] : [];
       if (photos.length) {
         stage('Choosing the dish photo');

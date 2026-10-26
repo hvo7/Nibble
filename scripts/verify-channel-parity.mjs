@@ -36,9 +36,15 @@ export function verifyChannelParity(root = process.cwd()) {
   assert.deepEqual(prod.records, stage.records, 'Staging and production contain different application source');
   assert.deepEqual(prod.css, stage.css, 'Staging and production styles differ');
   for (const file of ['main.cjs','preload.cjs']) assert.equal(hash(fs.readFileSync(path.join(root,'dist-electron',file))), hash(fs.readFileSync(path.join(staging,'dist-electron',file))), 'Desktop bundle differs: ' + file);
+  const companionFiles = ['capture.js', 'photo-capture.js', 'popup.js', 'popup.html', 'popup.css'];
+  for (const file of companionFiles) assert.equal(hash(fs.readFileSync(path.join(root, 'browser-companion', file))), hash(fs.readFileSync(path.join(staging, 'browser-companion', file))), 'Browser companion differs: ' + file);
+  const readManifest = app => JSON.parse(fs.readFileSync(path.join(app, 'browser-companion/manifest.json'), 'utf8'));
+  const { name: _prodName, version: _prodVersion, ...prodManifest } = readManifest(root);
+  const { name: _stageName, version: _stageVersion, ...stageManifest } = readManifest(staging);
+  assert.deepEqual(prodManifest, stageManifest, 'Browser companion permissions or configuration differ');
   const version = JSON.parse(fs.readFileSync(path.join(root,'package.json'),'utf8')).version;
   assert.equal(JSON.parse(fs.readFileSync(path.join(staging,'package.json'),'utf8')).version, version, 'Staging version differs');
-  return { version, applicationSources: prod.records.length, desktopBundles: 2, stylesheets: prod.css.length, rendererDifference: 'staging banner only; application sources match' };
+  return { version, applicationSources: prod.records.length, desktopBundles: 2, stylesheets: prod.css.length, companionRuntimeFiles: companionFiles.length, rendererDifference: 'staging banner only; application sources match' };
 }
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   console.log('CHANNEL PARITY PASS: ' + JSON.stringify(verifyChannelParity()));

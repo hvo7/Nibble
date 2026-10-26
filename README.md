@@ -7,7 +7,7 @@ Nibble is a Windows desktop cookbook that turns recipe websites, pasted text and
 ## What you can do
 
 - Import a public HTTPS recipe page, a saved browser recipe file, text or screenshots into one consistent review draft.
-- Automatically choose a likely dish photo from a website's recipe metadata or prominent page images and use it on Home, recipe cards and the full recipe page. Change or remove the cover when needed.
+- Automatically choose a likely dish photo from a website's recipe metadata or prominent page images and use it on Home, recipe cards and the full recipe page. Change or remove the cover when needed. Paste an image with Ctrl+V in Change cover photo, preview it, then choose Use this photo and save.
 - Save a reviewed draft and immediately open the full recipe page. Reopening a saved card uses the same page; Edit recipe is a separate mode.
 - Find unfinished imports in **Drafts**. Saved and trashed recipes leave that list; original evidence and recovery records remain available.
 - Organize recipes with favorites, collections, tags, search, filters and grid/list views.
@@ -57,6 +57,8 @@ The unsigned Windows x64 installer and unpacked app are written under `release/1
 
 ## Production updates
 
+The October 26, 2026 promotion adds embedded browser photos and Ctrl+V cover selection without changing version 1.0.1. See [the deployment record](docs/PRODUCTION_BROWSER_COVERS_2026-10-26.md). Reload the unpacked extension after updating; its version is unchanged.
+
 Run the staging verification first. After production approval, build production and run `npm run verify:parity` to confirm both channels contain the same current application code. Packaged builds must also pass `npm run test:package`. Fully close Nibble before reopening an updated build; Settings shows the running version.
 
 The original source publication is complete. `Publish-Nibble-1.0.0.cmd` is retained only as historical release tooling and intentionally refuses later versions. Generated builds, installers and personal data remain excluded from Git.
@@ -65,7 +67,7 @@ The original source publication is complete. `Publish-Nibble-1.0.0.cmd` is retai
 
 Recipes are stored in the local Electron user-data folder. Staging and preview data are separate. Profiles organize content but are not password-protected accounts.
 
-Direct website imports contact the source website and may download its selected photo from a public image host. Photos are saved locally; remote photo failures do not discard the recipe. Saved browser recipe files are read offline and currently need manual cover selection. The browser companion reads only a page you choose and does not read cookies, passwords or other tabs.
+Direct website imports contact the source website and may download its selected photo from a public image host. Photos are saved locally; remote photo failures do not discard the recipe. The browser companion embeds a readable dish photo in its JSON when available; Nibble imports it offline and applies it as the cover. Protected images can be copied and pasted manually. The browser companion reads only a page you choose and does not read cookies, passwords or other tabs.
 
 Photo selection uses metadata, title matches and page placement rather than visual food recognition. OCR and extracted quantities require review. Saving does not certify that a recipe or its nutrition is correct. Instagram/TikTok restrictions and private content are not bypassed; screenshots, saved browser files, pasted captions and user-provided videos are supported alternatives.
 
@@ -77,7 +79,8 @@ Optional Ollama, FFmpeg and Python/Whisper tools are installed separately. USDA 
 | --- | --- |
 | `src/` | React interface and shared recipe, nutrition and validation logic |
 | `electron/` | Desktop bridge, SQLite persistence, imports, image selection, media and network validation |
-| `browser-companion/` | Chrome/Edge companion for saving recipe-page content |
+| `src/browser-companion/` | Shared browser companion source, bundled by staging and production builds |
+| `browser-companion/` | Generated production companion for saving recipe-page content and dish photos |
 | `workers/` | Optional local video transcription |
 | `tests/`, `scripts/` | Automated checks, build, launch and packaging tools |
 | `docs/` | Setup, architecture, release history and verification records |

@@ -22,7 +22,7 @@ export function captureRecipePage() {
       }
     } catch { /* Malformed metadata does not prevent reading the visible recipe. */ }
   }
-  const keys = new Set(['@type', 'name', 'description', 'recipeIngredient', 'recipeInstructions', 'recipeYield', 'nutrition', 'author', 'prepTime', 'cookTime', 'totalTime', 'itemListElement', 'text', 'item', 'value', 'unitText', 'unitCode', 'calories', 'proteinContent', 'carbohydrateContent', 'fatContent', 'servingSize']);
+  const keys = new Set(['@type', 'name', 'description', 'recipeIngredient', 'recipeInstructions', 'recipeYield', 'nutrition', 'author', 'prepTime', 'cookTime', 'totalTime', 'itemListElement', 'text', 'item', 'value', 'unitText', 'unitCode', 'calories', 'proteinContent', 'carbohydrateContent', 'fatContent', 'servingSize', 'image', 'url', 'contentUrl', 'width', 'height']);
   let metadataVisits = 0, metadataSize = 0;
   function safeMetadata(value, depth = 0, seen = new Set()) {
     if (++metadataVisits > 20000) throw new Error('Recipe metadata is too complex. Use the print recipe view or screenshots.');
@@ -46,7 +46,7 @@ export function captureRecipePage() {
   // Never fall back to the entire body: account, message, and unrelated page content is not a recipe.
   const roots = cards.length ? cards : root && heading ? [root] : [];
   let visited = 0, size = 0;
-  const omitted = /^(SCRIPT|STYLE|NOSCRIPT|TEMPLATE|IFRAME|OBJECT|EMBED|FORM|INPUT|TEXTAREA|SELECT|BUTTON|NAV|FOOTER|ASIDE|SVG|IMG|VIDEO|AUDIO)$/;
+  const omitted = /^(SCRIPT|STYLE|NOSCRIPT|TEMPLATE|IFRAME|OBJECT|EMBED|FORM|INPUT|TEXTAREA|SELECT|BUTTON|NAV|FOOTER|ASIDE|SVG|VIDEO|AUDIO)$/;
   const clutter = /(?:^|[\s_-])(comments?|reply|newsletter|related|social|sharing|ratings?|reviews?|cookie|advertisement|sidebar|recommendations?)(?:$|[\s_-])/i;
   const kept = /^(H[1-6]|P|DIV|SECTION|ARTICLE|MAIN|UL|OL|LI|SPAN|STRONG|B|EM|I|BR|TABLE|TBODY|TR|TD|TH|DL|DT|DD)$/;
   function serialize(node, depth = 0) {
@@ -55,6 +55,17 @@ export function captureRecipePage() {
     if (!(node instanceof Element) || omitted.test(node.tagName) || node.hasAttribute('hidden') || node.getAttribute('aria-hidden') === 'true' || node.hasAttribute('contenteditable') || clutter.test(`${node.id} ${node.className}`)) return '';
     const style = getComputedStyle(node);
     if (style.display === 'none' || style.visibility === 'hidden') return '';
+    if (node.tagName === 'IMG') {
+      const attrs = ['alt', 'class', 'itemprop', 'width', 'height'].filter(name => node.hasAttribute(name)).map(name => ` ${name}="${escape(node.getAttribute(name).slice(0, 1000))}"`);
+      for (const name of ['src', 'data-src', 'data-lazy-src', 'data-original']) {
+        const raw = name === 'src' ? node.currentSrc || node.getAttribute(name) : node.getAttribute(name);
+        if (!raw) continue;
+        try { const url = new URL(raw, location.href); if (url.protocol === 'https:' && !url.username && !url.password) attrs.push(` ${name}="${escape(url.href.slice(0, 2000))}"`); } catch { /* Invalid image URL. */ }
+      }
+      // Only inert URL lists, never event handlers, style, or executable markup.
+      for (const name of ['srcset', 'data-srcset']) if (node.hasAttribute(name)) attrs.push(` ${name}="${escape(node.getAttribute(name).slice(0, 10000))}"`);
+      return '<img' + attrs.join('') + '>';
+    }
     const parts = [];
     for (const child of node.childNodes) {
       if (child instanceof Element && /^H[1-6]$/.test(child.tagName) && /^(?:comments?|reviews?|leave a (?:comment|reply)|related recipes|you may also like|buy (?:this recipe.s )?ingredients)\b/i.test(child.textContent.trim())) break;
@@ -68,8 +79,17 @@ export function captureRecipePage() {
   }
   const title = (document.querySelector('h1')?.textContent || document.title || '').trim().slice(0, 300);
   const metadata = structured.length ? `<script type="application/ld+json">${JSON.stringify(structured).replaceAll('<', '\\u003c')}</script>` : '';
-  const html = `<html><head><title>${escape(title)}</title>${metadata}</head><body><h1>${escape(title)}</h1>${roots.map(node => serialize(node)).join('\n')}</body></html>`;
+  const social = [...document.querySelectorAll('meta[property="og:image"],meta[property="og:title"],meta[name="twitter:image"]')].slice(0, 8).map(node => `<meta property="${escape(node.getAttribute('property') || node.getAttribute('name'))}" content="${escape((node.getAttribute('content') || '').slice(0, 2000))}">`).join('');
+  const heroes = [...document.querySelectorAll('article img,main img,.entry-content img,.post-content img')].filter(node => {
+    if (roots.some(root => root.contains(node))) return false;
+    for (let parent = node; parent && parent !== document.body; parent = parent.parentElement) {
+      if (omitted.test(parent.tagName) || clutter.test(`${parent.id} ${parent.className}`) || /author|instruction|directions|ingredient|step[-_]/i.test(`${parent.id} ${parent.className}`) || parent.hidden || parent.getAttribute('aria-hidden') === 'true' || parent.hasAttribute('contenteditable')) return false;
+      const style = getComputedStyle(parent); if (style.display === 'none' || style.visibility === 'hidden') return false;
+    }
+    return true;
+  }).slice(0, 24).map(node => serialize(node)).join('');
+  const html = `<html><head><title>${escape(title)}</title>${metadata}${social}</head><body><h1>${escape(title)}</h1>${roots.map(node => serialize(node)).join('\n')}${heroes ? '<div class="entry-content">' + heroes + '</div>' : ''}</body></html>`;
   if (!structured.length && !roots.length) throw new Error('No recipe card or ingredient section was found. Open the full recipe first, or use screenshots.');
   if (html.length > 1000000) throw new Error('This recipe is too large. Use its print recipe view.');
-  return { format: 'nibble-browser-recipe', version: 1, url: source.href, title, capturedAt: new Date().toISOString(), html };
+  return { format: 'nibble-browser-recipe', version: 2, url: source.href, title, capturedAt: new Date().toISOString(), html };
 }

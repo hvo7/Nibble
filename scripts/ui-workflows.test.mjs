@@ -292,7 +292,54 @@ test('imported cover appears on Home and saved page; replacing/removing persists
   assert.equal(document.querySelector('.recipe-page-hero img').getAttribute('src'),`nibble://media/${original.id}`);
   await click('Home');assert.equal(document.querySelector('.recipe-card img').getAttribute('src'),`nibble://media/${original.id}`);
   await click('Soup with photo');await click('Edit recipe');await click('Change cover photo');assert.equal(document.querySelector('.recipe-heading img').getAttribute('src'),`nibble://media/${original.id}`);
-  f.api.selectMedia=async()=>[replacement];await click('Change cover photo');await click('Save recipe');assert.equal(f.store.snapshot().recipes[0].coverId,replacement.id);
+  await click('Cancel');f.api.addImage=async()=>replacement;await click('Change cover photo');await pastePhoto();await click('Use this photo');await click('Save recipe');assert.equal(f.store.snapshot().recipes[0].coverId,replacement.id);
   await click('Edit recipe');await click('Remove cover photo');await click('Save recipe');assert.equal(f.store.snapshot().recipes[0].coverId,null);assert.equal(document.querySelector('.recipe-page-hero img'),null);
   assert.equal((await f.reopen()).recipes[0].coverId,null);
+});
+
+async function pastePhoto(target=aria('Paste cover photo'), type='image/png', size=128) {
+  const file={name:'Pasted food.png',type,size,arrayBuffer:async()=>new Uint8Array([137,80,78,71]).buffer};
+  const event=new Event('paste',{bubbles:true,cancelable:true});
+  Object.defineProperty(event,'clipboardData',{value:{files:[file],items:[]}});
+  await act(async()=>target.dispatchEvent(event));await settle();return event;
+}
+test('cover paste previews, confirms, survives save failure/retry and appears on saved cards',async t=>{
+  const f=await fixture(t),r=f.recipe('Pasted dish'),photo={id:uid(),name:'food.png',mime:'image/png',size:128};f.store.addAsset(photo,f.profile.id);
+  let calls=0;f.api.addImage=async(owner,name,bytes,cover)=>{calls++;assert.equal(owner,f.profile.id);assert.equal(cover,true);return photo;};
+  await openDraft(f,r);await change(aria('Recipe description'),'Keep this description');await click('Choose cover photo');
+  assert.equal(document.activeElement,aria('Paste cover photo'));await pastePhoto();
+  assert.equal(document.querySelector('.recipe-heading img'),null);assert.ok(document.querySelector('.cover-photo-preview img'));await click('Use this photo');
+  const save=f.api.saveRecipe;f.api.saveRecipe=async()=>{throw Error('Disk full');};await click('Save recipe');
+  assert.match(document.body.textContent,/Disk full/);assert.equal(aria('Recipe description').value,'Keep this description');assert.equal(document.querySelector('.recipe-heading img').getAttribute('src'),'nibble://media/'+photo.id);
+  f.api.saveRecipe=save;await click('Save recipe');await click('Home');
+  assert.equal(document.querySelector('.recipe-card img').getAttribute('src'),'nibble://media/'+photo.id);assert.equal(calls,1);
+  assert.equal((await f.reopen()).recipes[0].coverId,photo.id);
+});
+test('cover paste cancellation and decoding errors keep the current cover and form edits',async t=>{
+  const f=await fixture(t),old={id:uid(),name:'old.png',mime:'image/png',size:10},next={...old,id:uid(),name:'next.png'};
+  f.store.addAsset(old,f.profile.id);f.store.addAsset(next,f.profile.id);await openDraft(f,f.recipe('Keep cover',{coverId:old.id}));
+  await change(aria('Recipe title'),'Keep edited title');await click('Change cover photo');f.api.addImage=async()=>next;await pastePhoto();await click('Cancel');
+  assert.equal(document.querySelector('.recipe-heading img').getAttribute('src'),'nibble://media/'+old.id);
+  await click('Change cover photo');f.api.addImage=async()=>{throw Error('Unreadable photo');};await pastePhoto();
+  assert.match(document.body.textContent,/Unreadable photo/);assert.equal(button('Use this photo').disabled,true);
+  await pastePhoto(aria('Paste cover photo'),'image/svg+xml');assert.match(document.body.textContent,/PNG, JPG, or WebP/);
+  await pastePhoto(aria('Paste cover photo'),'image/png',9*1024*1024);assert.match(document.body.textContent,/smaller than 8 MB/);
+  await click('Cancel');assert.equal(aria('Recipe title').value,'Keep edited title');
+});
+test('cover upload serializes duplicate pastes and locks save/navigation until preparation completes',async t=>{
+  const f=await fixture(t),gate=defer(),photo={id:uid(),name:'food.png',mime:'image/png',size:10};f.store.addAsset(photo,f.profile.id);let calls=0;
+  f.api.addImage=async()=>{calls++;await gate.promise;return photo;};await openDraft(f,f.recipe());await click('Choose cover photo');
+  await pastePhoto();await pastePhoto();assert.equal(calls,1);assert.ok(button('Cancel').disabled);assert.ok(aria('Recipe title').matches(':disabled'));
+  await click('Home');assert.ok(document.querySelector('.editor-page'));await act(async()=>gate.resolve());await settle();await click('Use this photo');await click('Save recipe');
+  assert.equal(f.store.snapshot().recipes[0].coverId,photo.id);
+});
+test('cover file picker shares the paste decoder and text paste outside the dialog is untouched',async t=>{
+  const f=await fixture(t),photo={id:uid(),name:'food.webp',mime:'image/png',size:10};f.store.addAsset(photo,f.profile.id);let calls=0;
+  f.api.addImage=async(owner,name,bytes,cover)=>{assert.equal(cover,true);calls++;return photo;};await openDraft(f,f.recipe());
+  const event=new Event('paste',{bubbles:true,cancelable:true});Object.defineProperty(event,'clipboardData',{value:{files:[],items:[],getData:()=> 'Some recipe notes'}});
+  await act(async()=>aria('Recipe description').dispatchEvent(event));assert.equal(event.defaultPrevented,false);assert.equal(calls,0);
+  await click('Choose cover photo');const input=aria('Cover photo file');
+  Object.defineProperty(input,'files',{value:[{name:'food.webp',type:'image/webp',size:128,arrayBuffer:async()=>new ArrayBuffer(4)}],configurable:true});
+  await act(async()=>input.dispatchEvent(new Event('change',{bubbles:true})));await settle();await click('Use this photo');
+  assert.equal(calls,1);assert.equal(document.querySelector('.recipe-heading img').getAttribute('src'),'nibble://media/'+photo.id);
 });

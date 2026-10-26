@@ -158,3 +158,57 @@ it('a failed image download explains the cause while retaining the recipe and so
   expect(draft.warnings.join(' ')).toContain('blocked or limited');
   expect(draft.websiteImport?.sources.some(s=>s.field==='Cover photo attempt'&&s.raw.includes('dish.jpg'))).toBe(true);
 });
+
+async function portableCapture(data?: string, title = sourceRecipe.name) {
+  const sharp = (await import('sharp')).default;
+  const bytes = data ?? (await sharp({ create: { width: 640, height: 480, channels: 3, background: '#bb6633' } }).jpeg().toBuffer()).toString('base64');
+  return { ...savedBrowserRecipe(jsonLd({ ...sourceRecipe, image: 'https://example.com/carrot-soup.jpg' })), version: 2 as const, title: sourceRecipe.name,
+    coverPhoto: { mime: 'image/jpeg' as const, data: bytes, width: 640, height: 480, sourceUrl: 'https://example.com/carrot-soup.jpg', recipeTitle: title, reason: 'Recipe metadata' } };
+}
+async function importPortable(capture: Awaited<ReturnType<typeof portableCapture>>) {
+  const id = service.start({ profileId, url: '', text: '', assetIds: [], useAI: false, browserCapture: capture });
+  await vi.waitFor(() => expect(store.snapshot().jobs.find(j => j.id === id)?.status).toBe('review'));
+  return store.snapshot().jobs.find(j => j.id === id)!;
+}
+describe('embedded browser dish photo lifecycle', () => {
+  it('decodes real embedded JPEG offline, persists cover/source/recovery data and isolates profiles', async () => {
+    const capture = await portableCapture(), job = await importPortable(capture), draft = job.drafts[0];
+    expect(fetchPublic).not.toHaveBeenCalled(); expect(fetchPublicImage).not.toHaveBeenCalled();
+    expect(draft.coverId).not.toBeNull(); expect(draft.evidence.some(e => e.assetId === draft.coverId && e.kind === 'image')).toBe(true);
+    expect(draft.websiteImport?.sources.find(s => s.field === 'Cover photo')?.raw).toBe(capture.coverPhoto.sourceUrl);
+    expect(draft.sourceReview?.confirmed).toBe(false); expect(draft.ingredients).toHaveLength(5);
+    const saved = store.saveRecipe(draft); store.close(); store = new Store(directory); await store.open();
+    expect(store.snapshot().recipes.find(r => r.id === saved.id)?.coverId).toBe(draft.coverId);
+    expect(store.snapshot().jobs.find(j => j.id === job.id)?.request.browserCapture).toEqual(capture);
+    const other = uid(); store.saveProfile({ id: other, name: 'Other', units: 'metric', avatar: '', createdAt: '' });
+    expect(() => store.saveRecipe({ ...blankRecipe(other), title: 'Other', coverId: draft.coverId })).toThrow();
+    const trashed = store.saveRecipe({ ...saved, deletedAt: new Date().toISOString() });
+    expect(store.saveRecipe({ ...trashed, deletedAt: null }).coverId).toBe(draft.coverId);
+  });
+  it('keeps ingredients when embedded bytes are corrupt and allows a successful separate retry', async () => {
+    const broken = await importPortable(await portableCapture(Buffer.from('not an image').toString('base64')));
+    expect(broken.drafts[0].coverId).toBeNull(); expect(broken.drafts[0].ingredients).toHaveLength(5);
+    expect(broken.drafts[0].warnings.join(' ')).toContain('saved dish photo could not be read');
+    const corrected = store.saveRecipe({ ...broken.drafts[0], title: 'My soup correction' });
+    const retry = await importPortable(await portableCapture());
+    expect(retry.drafts[0].coverId).not.toBeNull(); expect(retry.drafts[0].id).not.toBe(corrected.id);
+    expect(store.snapshot().recipes[0].title).toBe('My soup correction');
+    expect(fetchPublicImage).not.toHaveBeenCalled();
+  });
+  it('does not attach another recipe record’s embedded cover', async () => {
+    const job = await importPortable(await portableCapture(undefined, 'Banana bread'));
+    expect(job.drafts[0].coverId).toBeNull(); expect(job.drafts[0].warnings.join(' ')).toContain('different recipe record');
+  });
+  it('canceling while embedded photo is decoding retains ingredients without assigning a cover', async () => {
+    let finish!: () => void;
+    vi.spyOn(MediaStore.prototype, 'addCoverPhoto').mockImplementation(async (_bytes, _name, _profile, signal) => {
+      await new Promise<void>(resolve => { finish = resolve; }); signal?.throwIfAborted(); throw new Error('Unexpected completion');
+    });
+    const capture = await portableCapture();
+    const id = service.start({ profileId, url: '', text: '', assetIds: [], useAI: false, browserCapture: capture });
+    await vi.waitFor(() => expect(finish).toBeTypeOf('function')); service.cancel(id); finish();
+    await vi.waitFor(() => expect(store.snapshot().jobs.find(j => j.id === id)?.status).toBe('canceled'));
+    const draft = store.snapshot().jobs.find(j => j.id === id)!.drafts[0];
+    expect(draft.ingredients).toHaveLength(5); expect(draft.coverId).toBeNull();
+  });
+});

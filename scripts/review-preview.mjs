@@ -10,7 +10,7 @@ import { zipBrowserCompanion } from './prepare-browser-companion.mjs';
 // This fixture-only UI server has no database, native bridge, API key or external network requests.
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const output = path.join(root, '.nibble-staging', 'ui-preview'); await mkdir(output, { recursive: true });
-await zipBrowserCompanion(path.join(output, 'nibble-browser-companion.zip'));
+await zipBrowserCompanion(path.join(output, 'nibble-browser-companion.zip'), { staging: true });
 let ocrReady = false;
 try { ocrReady = await prepareOcr({ download: !process.argv.includes('--build-only') }); }
 catch (error) { console.error(`Screenshot OCR setup needs attention: ${error.cause?.code ?? error.message}. Run npm run setup:ocr when online, then restart this preview.`); }

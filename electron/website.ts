@@ -246,6 +246,9 @@ export function extractWebsite(html: string, url: string, profileId: string): { 
   const cards = cardCandidates(document);
   // A whole-page text list would concatenate separate recipe cards.
   const fallback = cards.filter(c => c.ingredients.length).length > 1 ? [] : textCandidate(document);
+  // Generic cards can expose a photo/title while their ingredient rows use plain headings.
+  // Attach that scoped photo only to the matching text recipe, never to another dish.
+  for (const candidate of fallback) candidate.images.push(...cards.filter(card => card.title && normalize(card.title) === normalize(candidate.title)).flatMap(card => card.images));
   const candidates = [...structured(document), ...embedded(document), ...cards, ...fallback].filter(c => c.ingredients.length || c.steps.length || c.nutrition);
   const groups: Candidate[][] = [];
   for (const candidate of candidates) {

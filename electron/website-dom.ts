@@ -36,7 +36,7 @@ export function clean(value: unknown, max = 20000): string {
   return typeof value === 'string' ? textOf(parseFragment(value.slice(0, max))).replace(/\s+/g, ' ').trim().slice(0, max) : '';
 }
 export function documentFor(html: string) {
-  if (Buffer.byteLength(html) > 4 * 1024 * 1024) throw new Error('This page is too large to parse safely.');
+  if (new TextEncoder().encode(html).byteLength > 4 * 1024 * 1024) throw new Error('This page is too large to parse safely.');
   return parse(html);
 }
 export const valueOf = (node: HtmlNode) => clean(attr(node, 'content') || attr(node, 'datetime') || textOf(node));

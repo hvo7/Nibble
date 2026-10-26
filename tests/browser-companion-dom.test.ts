@@ -2,7 +2,7 @@
 // @vitest-environment-options {"url":"https://example.com/fixture-recipe?utm_source=test&token=secret-value"}
 import { afterEach, describe, expect, it, vi } from 'vitest';
 // @ts-expect-error The companion intentionally ships as dependency-free JavaScript.
-import { captureRecipePage } from '../browser-companion/capture.js';
+import { captureRecipePage } from '../src/browser-companion/capture.js';
 import { extractBrowserCapture } from '../electron/browser-capture';
 import { uid } from '../src/shared/model';
 import { browserFixtureHtml, screenshotIngredients } from './fixtures/browser-capture';
@@ -16,7 +16,7 @@ describe('browser companion reading real DOM structures', () => {
     const capture = captureRecipePage();
     const [recipe] = extractBrowserCapture(capture, uid()).recipes;
     expect(recipe.ingredients.map(i => i.original)).toEqual(screenshotIngredients);
-    expect(capture.html).not.toMatch(/private form value|Private|chocolate|secret-value|<img|<input|<form|contenteditable/);
+    expect(capture.html).not.toMatch(/private form value|Private|chocolate|secret-value|<input|<form|contenteditable/);
     expect(capture.url).toBe('https://example.com/fixture-recipe');
     expect(document.body.innerHTML).toBe(before); expect(network).not.toHaveBeenCalled();
   });
@@ -56,4 +56,24 @@ describe('browser companion reading real DOM structures', () => {
     document.head.append(script);
     expect(() => captureRecipePage()).toThrow('too complex');
   });
+});
+
+it('retains safe recipe photo metadata and scoped images for the shared dish selector', async () => {
+  const { selectBrowserCover } = await import('../src/shared/browser-cover-selector');
+  document.body.innerHTML = '<article class="recipe-card"><h1>Carrot soup</h1><img src="/carrot-soup.jpg" width="640" height="480" alt="Carrot soup" onerror="steal()"><h2>Ingredients</h2><ul><li>200 g carrots</li></ul><h2>Instructions</h2><p>Simmer.</p><aside><img src="/other-dish.jpg"></aside></article>';
+  const capture = captureRecipePage();
+  expect(capture.version).toBe(2); expect(capture.html).toContain('https://example.com/carrot-soup.jpg');
+  expect(capture.html).not.toMatch(/onerror|steal|other-dish/);
+  expect(selectBrowserCover(capture).candidates[0].url).toContain('carrot-soup.jpg');
+});
+
+it('resolves referenced ImageObjects without exporting unrelated metadata', async () => {
+  document.head.innerHTML = '<script type="application/ld+json">' + JSON.stringify({ '@graph': [
+    { '@type': 'Recipe', name: 'Carrot soup', image: { '@id': '#photo' }, recipeIngredient: ['200 g carrots'], recipeInstructions: ['Simmer.'] },
+    { '@id': '#photo', '@type': 'ImageObject', contentUrl: 'https://example.com/carrot-soup.webp', width: 600, height: 400, privateToken: 'secret' },
+  ] }) + '</script>';
+  const capture = captureRecipePage();
+  const { selectBrowserCover } = await import('../src/shared/browser-cover-selector');
+  expect(selectBrowserCover(capture).candidates[0].url).toContain('carrot-soup.webp');
+  expect(capture.html).not.toContain('privateToken');
 });

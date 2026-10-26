@@ -21,7 +21,7 @@ async function run(args) {
 }
 await run(['node_modules/typescript/bin/tsc', '--noEmit']);
 await mkdir(output, { recursive: true });
-await copyBrowserCompanion(path.join(output, 'browser-companion'));
+await copyBrowserCompanion(path.join(output, 'browser-companion'), { staging: true });
 await run(['node_modules/vite/bin/vite.js', 'build', '--mode', 'staging', '--outDir', path.join(output, 'dist')]);
 await build({ entryPoints: ['electron/main.ts', 'electron/preload.ts'], absWorkingDir: root, outdir: path.join(output, 'dist-electron'), outExtension: { '.js': '.cjs' }, bundle: true, platform: 'node', format: 'cjs', target: 'node22', packages: 'external', sourcemap: true, define: { 'import.meta.url': '__filename' } });
 await mkdir(path.join(output, 'assets'), { recursive: true });

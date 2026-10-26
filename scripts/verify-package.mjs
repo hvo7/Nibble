@@ -8,7 +8,9 @@ import { extractAll, extractFile, listPackage } from '@electron/asar';
 import { companionFiles } from './prepare-browser-companion.mjs';
 
 const root = process.cwd(), metadata = JSON.parse(readFileSync('package.json', 'utf8'));
-const directory = path.resolve(metadata.build.directories.output, 'win-unpacked');
+const directoryFlag = process.argv.indexOf('--directory');
+if (directoryFlag >= 0 && !process.argv[directoryFlag + 1]) throw new Error('Supply the unpacked package directory.');
+const directory = directoryFlag < 0 ? path.resolve(metadata.build.directories.output, 'win-unpacked') : path.resolve(process.argv[directoryFlag + 1]);
 const resources = path.join(directory, 'resources'), archive = path.join(resources, 'app.asar');
 const list = listPackage(archive).map(file => file.replaceAll('\\', '/').replace(/^\//, ''));
 // @electron/asar resolves nested directory names with the host path separator.
@@ -32,7 +34,7 @@ for (const model of manifest.models) assert.equal(createHash('sha256').update(re
 assert.ok(readFileSync(path.join(resources, 'ocr/LICENSE.txt'), 'utf8').includes('Apache License'));
 assert.ok(existsSync(path.join(resources, 'workers/transcribe.py')));
 for (const name of companionFiles) assert.deepEqual(readFileSync(path.join(resources, 'browser-companion', name)), readFileSync(path.join(root, 'browser-companion', name)), 'Browser companion resource missing or outdated: ' + name);
-console.log('PACKAGE PASS: version, exact renderer/main/preload, assets, isolated contents, OCR workers, model checksums, license, external Python worker and all seven browser companion resources.');
+console.log('PACKAGE PASS: version, exact renderer/main/preload, assets, isolated contents, OCR workers, model checksums, license, external Python worker and all eight browser companion resources.');
 
 mkdirSync('.nibble-test', { recursive: true });
 const content = mkdtempSync(path.resolve('.nibble-test/package-content-'));

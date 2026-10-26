@@ -4,6 +4,7 @@ import { assertSourceReview, parseRecipeSources } from '../../src/shared/text-pa
 import { pendingWebsiteConflicts } from '../../src/shared/website-review';
 import { createPreviewReader } from './preview-ocr';
 import { extractBrowserCapture } from '../../electron/browser-capture';
+import { browserCoverForRecipe } from '../../src/shared/browser-capture';
 import { singleImportDraft, importTitleHint } from '../../src/shared/import-draft';
 
 const desktopOnly = (feature: string): never => { throw new Error(`${feature} needs desktop staging. This browser preview cannot access desktop tools, API keys, or backups. Your preview edits remain here until you reload.`); };
@@ -83,6 +84,19 @@ export function createPreviewApi(fixtures: Record<string, Recipe>) {
         refreshDraft();
       }
       controller.signal.throwIfAborted(); refreshDraft();
+      const draft = job.drafts[0];
+      if (draft && request.browserCapture?.version === 2) {
+        const capture = request.browserCapture, photo = browserCoverForRecipe(capture, draft);
+        if (capture.photoNote) draft.warnings.push(capture.photoNote);
+        if (photo) {
+          try {
+            const asset = await api.addImage(request.profileId, draft.title.slice(0, 250) + ' - browser dish photo.jpg', Uint8Array.from(atob(photo.data), c => c.charCodeAt(0)).buffer, true);
+            controller.signal.throwIfAborted(); draft.coverId = asset.id;
+            draft.evidence.push({ id: uid(), kind: 'image', label: 'Dish photo saved by browser companion', text: '', assetId: asset.id });
+            if (draft.websiteImport) draft.websiteImport.sources = [...draft.websiteImport.sources.slice(0, 99), { field: 'Cover photo', method: photo.reason, raw: photo.sourceUrl }];
+          } catch { controller.signal.throwIfAborted(); draft.warnings.push('The saved dish photo could not be read. Paste or choose another cover photo.'); }
+        } else if (capture.coverPhoto) draft.warnings.push('The saved photo belongs to a different recipe record. Choose a cover photo for this dish.');
+      }
       const count = job.drafts.reduce((sum, draft) => sum + draft.ingredients.length, 0);
       job.status = 'review'; job.stage = count ? `${count} ingredients extracted · review recipe` : 'No ingredients extracted · source needs attention';
     } catch (error) {
@@ -130,8 +144,9 @@ export function createPreviewApi(fixtures: Record<string, Recipe>) {
       for (const file of files) result.push(await api.addImage(owner, file.name, await file.arrayBuffer()));
       return result;
     },
-    async addImage(owner, name, bytes) {
+    async addImage(owner, name, bytes, cover) {
       requireProfile(owner);
+      if (cover && bytes.byteLength > 8 * 1024 * 1024) throw new Error('Choose a photo smaller than 8 MB.');
       if (bytes.byteLength > 20 * 1024 * 1024) throw new Error('Images must be smaller than 20 MB.');
       const head = new Uint8Array(bytes);
       const mime = head[0] === 137 && head[1] === 80 && head[2] === 78 && head[3] === 71 ? 'image/png' : head[0] === 255 && head[1] === 216 && head[2] === 255 ? 'image/jpeg' : String.fromCharCode(...head.slice(0, 4)) === 'RIFF' && String.fromCharCode(...head.slice(8, 12)) === 'WEBP' ? 'image/webp' : '';

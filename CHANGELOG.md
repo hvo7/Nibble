@@ -1,5 +1,12 @@
 # Changelog
 
+## Production update - October 26, 2026 (version unchanged)
+
+- Promoted embedded browser-companion dish photos and Ctrl+V cover selection from staging.
+- Browser JSON carries photo bytes and source details; imports apply the photo offline. Older files still work.
+- Production builds now bundle the companion from shared source and verify its runtime matches staging.
+- App and production companion remain at 1.0.1; no new release version or tag. See [deployment details](docs/PRODUCTION_BROWSER_COVERS_2026-10-26.md).
+
 ## 1.0.1 - October 25, 2026
 
 - Fixed the website-photo decoder mismatch: PNG, JPEG and WebP downloads now use one tested local decoder in staging and production.

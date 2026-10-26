@@ -1,24 +1,26 @@
-# Browser recipe imports and profile fixes - 0.2.1, October 21, 2026
+# Browser recipe imports
 
-This update is included in source, staging, and the 0.2.1 production build. See `RELEASE_0.2.1.md` for current verification and launch limits. The existing 0.2.0 installer is preserved.
+The October 26, 2026 production update includes embedded dish photos and clipboard cover selection, keeping version 1.0.1 unchanged. See `PRODUCTION_BROWSER_COVERS_2026-10-26.md` for current verification. Earlier verification history is retained below.
 
 ## Import a website that rejects a direct download
 
-1. In Nibble staging, open **Import Recipe → Set up browser companion → Get browser companion**. The desktop button opens the bundled companion folder. The browser preview downloads a ZIP to extract.
+1. In Nibble, open **Import Recipe → Set up browser companion → Get browser companion**. The desktop button opens the bundled companion folder. The browser preview downloads a ZIP to extract.
 2. In Chrome, open `chrome://extensions`; in Edge, open `edge://extensions`. Enable Developer mode, choose **Load unpacked**, and select the folder containing `manifest.json`. Keep that folder after installation.
-3. Open the recipe website normally. Click the Nibble companion, then **Read this recipe**. Review the capture and select **Save recipe file**.
+3. Open the recipe website normally. Click the Nibble companion, then **Read this recipe**. Review the capture and selected food photo, then select **Save recipe file**.
 4. In Nibble, choose **Import Recipe → Choose saved recipe**, select the `.nibble-recipe.json` file, and select **Create recipe draft**.
 5. Review ingredient quantities, directions, recipe yield, and any published nutrition. Confirm the source review before marking a card ready.
 
 This uses the page already loaded in your browser. Nibble does not request that website again when importing the saved file. It needs no paid service, API key, cloud account, or local bridge server. It cannot capture content your browser cannot access. Screenshots and pasted text remain available for image-only recipes, videos, unsupported layouts, or access challenges.
 
-The companion is distributed as a local extension, not a published store listing. It requests only `activeTab` and `scripting`; it has no background process, persistent host permissions, cookie/history permissions, or network calls. The source link, timestamp, recipe metadata, and sanitized recipe area are saved. Unknown nutrition remains unknown; conflicting sources remain reviewable. Its privacy and use policy is available in the import dialog, Settings, and `browser-companion/privacy.html`.
+The companion is distributed as a local extension, not a published store listing. It requests only `activeTab` and `scripting`; it has no background process, persistent host permissions, cookie/history permissions, or cloud uploads. After Read is clicked, it can read accessible loaded photo pixels or fetch a same-site image without cookies or redirects. The source link, timestamp, recipe metadata, sanitized recipe area and selected photo (when readable) are saved. Unknown nutrition remains unknown; conflicting sources remain reviewable. Its privacy and use policy is available in the import dialog, Settings, and `browser-companion/privacy.html`.
+
+If the companion is already installed, reload it from Chrome/Edge Extensions after updating. The production companion version remains 1.0.1 by request. Version 2 files carry photo bytes and provenance; version 1 files remain supported. For an unavailable photo, choose Change cover photo in Nibble, press Ctrl+V with a copied image, preview it, choose Use this photo, then Save recipe.
 
 ## Profile control
 
 The entire bottom-left profile row now opens **Your kitchens**, even with one profile. It provides switching, profile settings, and kitchen creation. Switching checks unsaved recipe edits and clears prior-profile search/filter selections and pending supplemental imports.
 
-## Verification
+## Historical verification (0.2.1)
 
 - The preceding import/profile implementation passed **129 tests across 16 suites**, including six DOM capture tests and three React interaction tests. The current broad rerun was blocked by automatic approval review before completion; those 129 results precede the latest live-page parser fix.
 - **15 launcher, smoke-result, and preview HTTP-boundary tests passed**, plus **8 offline extraction regression tests** for the new parser changes.

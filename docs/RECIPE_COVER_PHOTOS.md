@@ -4,6 +4,8 @@ New direct website imports choose a dish photo and save a local, re-encoded copy
 
 ## Production status
 
+**October 26, 2026 — version unchanged:** production now includes embedded photos in browser JSON and Ctrl+V cover selection. See [the deployment record](PRODUCTION_BROWSER_COVERS_2026-10-26.md).
+
 **Updated in 1.0.1:** downloaded PNG/JPEG/WebP photos now use a bundled decoder rather than relying on Electron nativeImage for WebP. Up to six candidates are tried within the same timeout, with safe failure reasons retained. See [1.0.1 validation and limitations](RELEASE_1.0.1.md).
 
 ### Earlier 1.0.0 confirmation
@@ -22,7 +24,7 @@ This is heuristic selection based on page evidence, not visual food recognition.
 
 Only the chosen main recipe triggers photo downloads. At most six ranked candidates are tried, within one 12-second photo budget. Photo failures preserve the recipe and show a review note. Canceling retains recovered ingredients. The selected photo URL and selection reason remain in website source records, and the photo remains available as source evidence.
 
-Saved browser capture files continue to import without network requests. This feature downloads photos for direct website URL imports only. Screenshots still support choosing a cover manually. No paid service or cloud image model is used. The existing free sharp dependency is now included at runtime.
+Saved browser capture files continue to import without network requests. New companion files can include a decoded dish photo and source details, which Nibble applies to the matching recipe. Older files still work. Protected images may need a manual cover; Change cover photo now accepts Ctrl+V or an image file, followed by preview and Use this photo. No paid service or cloud image model is used. The existing free sharp dependency is now included at runtime.
 
 ## Transport and storage
 

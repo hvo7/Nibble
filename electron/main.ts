@@ -80,8 +80,8 @@ else {
     handle('key:set', value => { nutrition.setKey(z.string().max(100).parse(value)); changed(); });
     handle('media:get', value => store.asset(idSchema.parse(value)));
     handle('media:image', value => {
-      const input = z.object({ profileId: idSchema, name: z.string().max(300), bytes: z.instanceof(ArrayBuffer) }).parse(value);
-      return media.addImage(Buffer.from(input.bytes), input.name, input.profileId);
+      const input = z.object({ profileId: idSchema, name: z.string().max(300), bytes: z.instanceof(ArrayBuffer), cover: z.boolean().optional() }).parse(value);
+      return input.cover ? media.addCoverPhoto(Buffer.from(input.bytes), input.name, input.profileId) : media.addImage(Buffer.from(input.bytes), input.name, input.profileId);
     });
     handle('media:select', async value => {
       const profileId = idSchema.parse(value); store.assertProfile(profileId);
