@@ -4,7 +4,9 @@ Prepared October 25-26, 2026. The user explicitly authorized promotion of the st
 
 ## Current status
 
-The local desktop production build is now **1.0.0**. The unpacked Windows x64 package passes file/resource checks and real-image OCR. **GitHub publication and the Windows installer are incomplete.** No release commit, version tag, push or GitHub Release entry was created during this session. Native application rendering remains unverified.
+The local desktop production build is **1.0.0**, including automatic dish-photo selection and recipe-card covers for new direct website imports. The application source was published to GitHub `main` at [ece9edc](https://github.com/hvo7/Nibble/commit/ece9edcf16bcffe3919532760a09dd61f9b5ff61), preserving the initial commit and Apache license. All 154 source files were verified against the uploaded Git tree. No version tag or GitHub Release entry was created. **The Windows installer remains incomplete**, and native application rendering remains unverified.
+
+Following the user's cover-photo production request, the production source maps were checked against current source and `npm run build` refreshed production successfully. All 13 production files match the pre-refresh backup. The unpacked Windows x64 package again passed exact production file/resource checks and real-image OCR. The same source passed all 224 automated checks and the staging build in this conversation. See [cover-photo production verification](RECIPE_COVER_PHOTOS.md#production-status). Application code and version remain unchanged; the feature was already included.
 
 Production recipe data was not migrated, opened for editing, or replaced with staging data. Existing production outputs were backed up before rebuilding. Earlier 0.2.x release folders remain available.
 
@@ -36,7 +38,8 @@ Production recipe data was not migrated, opened for editing, or replaced with st
 | Dependency license inventory | Generated for 394 installed package declarations |
 | Native desktop smoke | Failed to verify rendering; process exited 2147483651 (`0x80000003`) |
 | Windows NSIS installer | Failed: Windows could not start cached `makensis.exe` (`spawn UNKNOWN`). No installer EXE was produced |
-| GitHub source/tag publication | Blocked; not performed |
+| GitHub source publication | Passed: 154 files on main at ece9edc; exact uploaded tree verified |
+| Version tag / GitHub Release entry | Not created |
 
 The automated UI and integration suites use fixtures and temporary data. They cover save success/failure/retry, navigation, drafts, persistence, trash/restore, profile isolation, source evidence and nutrition behavior. They do not establish live native behavior, actual window layout, or live external-service availability. Package OCR proves the supplied screenshot, not a general accuracy score.
 
@@ -51,7 +54,11 @@ Live USDA, optional local AI/video tools, clean-account installation, native off
 - Pre-promotion rollback: `.nibble-staging/production-rollback/before-1.0.0-20261025-231249/`. This contains the prior build outputs and version/configuration documentation; it is not a user-data backup.
 - Local logs: `.nibble-test/release-1.0.0/`, including `staging-verification.log`, `production-build.log`, `installer-package-retry.log`, `package-verification-final.log` and `desktop-smoke.log`. These generated logs are excluded from Git.
 
-## Finish publishing
+## Publication history
+
+Source publication subsequently completed through the connected GitHub integration. Local Git network access failed, so the integration created the source tree and commit, advanced `main` without force-pushing, and verified the published commit and file hashes. Local Git metadata remains unchanged. The prepared publishing launcher below is a historical fallback for the bootstrap repository state; it is not needed for the completed source publication and its remote-history guard will reject the now-advanced branch.
+
+### Earlier preparation attempt
 
 The public repository was read in the browser. Its `main` branch contained only README.md and LICENSE at initial commit `02a18c51f91e037ca9fab5b70e2153b925f93be4`, with no tags or releases. A dedicated local Nibble repository was initialized to avoid using the parent folder's repository. Adding `origin` failed because this session cannot write `.git/config`; Git network lookup also failed with `getaddrinfo() thread failed to start`. The browser was signed out. The declined GitHub plugin was not used.
 
